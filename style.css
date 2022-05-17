@@ -1,0 +1,49 @@
+*{
+  box-sizing:border-box;
+  margin:0;
+  padding:0;
+}
+
+html,
+body{
+  height:100%;
+}
+
+body{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  background:black;
+  color:white;
+  font-family:sans-serif;
+  flex-direction:column;
+}
+
+p{
+  margin-top:1rem;
+  font-size:0.7rem;
+  text-transform:uppercase;
+  letter-spacing:1px;
+}
+
+.audio--container{
+  width:50px;
+  height:20px;
+  display:flex;
+  justify-content:space-between;
+}
+
+.audio--container:hover{
+  cursor:pointer;
+}
+
+.audio--container div{
+  width:5px;
+  background:white;
+  transition:transform 250ms ease, background 200ms ease;
+}
+
+.audiobar{
+  /*transform:scaleY(0.5);*/
+  transform-origin:center;
+}
