@@ -1,40 +1,14 @@
-const bars = document.querySelectorAll(".audiobar");
-const audioContainer = document.querySelector(".audio--container");
-const audio = document.querySelector("audio");
-let interval = null;
+const audio = document.getElementById("audio");
+const playPause = document.getElementById("play");
 
-bars.forEach(bar =>{
-      let size = Math.random();
-      bar.style.transform = `scaleY(${size})`;
-    });
-
-audioContainer.addEventListener("click", ()=>{
-      
-  if(interval){
-    clearInterval(interval);
-    audio.pause();
-    interval = null;
-    
-    bars.forEach(bar =>{
-              bar.style.background = `white`;
-            });   
-    return 
-  }else{
+playPause.addEventListener("click", () => {
+  if (audio.paused || audio.ended) {
+    playPause.querySelector(".pause-btn").classList.toggle("hide");
+    playPause.querySelector(".play-btn").classList.toggle("hide");
     audio.play();
-    interval = setInterval(()=>{
-
-    bars.forEach(bar =>{
-              let size = Math.random();
-              let hue = Math.floor(Math.random()*360);
-              bar.style.transform = `scaleY(${size})`;
-              bar.style.background = `hsl(${hue}, 90%, 60%)`;
-            });
-
-        }, 150);   
+  } else {
+    audio.pause();
+    playPause.querySelector(".pause-btn").classList.toggle("hide");
+    playPause.querySelector(".play-btn").classList.toggle("hide");
   }
-   
-});
-
-audio.addEventListener("ended", ()=>{
-  clearInterval(interval);
 });
