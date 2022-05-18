@@ -1,161 +1,243 @@
-$(document).ready(function(){
-  var obj = [
-    {
-      name : "VA ONE",
-      artist : "EDM Cavern",
-      songSource : "mwhpvu78gg8uv",
-      coverSource : "valogop.png",
-      bpm : 82
-    }
-  ];
-  
-  var base = "http://stream.zeno.fm/";
-  var base1 = "https://cielyozora.github.io/rpwvaone/"
-  var playing = false;
-  var currentIndex = 0;
-  var audioElement = document.createElement("audio");
-  
-  function newSong(){
-    audioElement.setAttribute("src", base + obj[currentIndex].songSource);
-    audioElement.currentTime = 0;
-    $("#seekBar").css("width","0%");
-    //update thumbnail
-    $(".thumbnail").css("background-image","url("+ base1 + obj[currentIndex].coverSource + ")");
-    $("#name").text(obj[currentIndex].name);
-    $("#author").text(obj[currentIndex].artist);
-    console.log(60.0000 / obj[currentIndex].bpm + "s");
-    //marquee
-    if($("#name").text().length >= 15){
-      $("#name").marquee(); 
-    }
-    if($("#author").text().length >= 30)
-      $("#author").marquee();
-  }
-  function toggle(){//x = playing
-    if(playing){//is playing "||"
-      $('#toggle .shape, #toggle .nd').css({
-        'display':'block',
-        'clip-path':'none',
-        '-webkit-clip-path':'none',
-        '-moz-clip-path':'none',
-        'width':'40%'
-      });
-    }
-    else{//is not playing
-      $('#toggle .nd').css('display','none');
-      $('#toggle .shape').css({
-        'clip-path':'polygon(0% 0%, 0% 100%, 100% 50%)',
-        '-webkit-clip-path':'polygon(0% 0%, 0% 100%, 100% 50%)',
-        '-moz-clip-path':'polygon(0% 0%, 0% 100%, 100% 50%)',
-        'width':'100%'
-      });
-    }
-  }
-  function convert(x){//x = full seconds
-    var min = Math.floor(x/60);
-    var sec = Math.floor(x - min *60);;
-    if(min<10){
-      min = '0' + min;
-    }
-    if(sec<10){
-      sec = '0' + sec;
-    }
-    return min + ':' + sec;
-  }
-  function map(maxA,maxB,current){
-    //maxA :          maxB         = x(maxA-type) : current(maxB-type)
-    //100% : audioElement.duration =      x       : audioElement.current
-    return ((current * maxA) / maxB);
-  }
-  function nextSong(){
-    if(currentIndex >= obj.length-1){
-      currentIndex = 0;
-    }
-    else{
-      currentIndex ++;
-    }
-  }
-  function prevSong(){
-    if(currentIndex <=0){
-      currentIndex = obj.length-1;
-    }
-    else{
-      currentIndex--;  
-    }
-  }
-  var date;
-  function changeCol(){
-    date = new Date();
-    if(date.getMinutes() % 2 == 0){
-      //pari
-      if(date.getMinutes() == 0 || date.getMinutes() == 30){
-       $(":root").css({
-        "--rdcol" : "#aff",
-        "--rdcol2" : "#affa"}); 
-      }
-      else{
-        $(":root").css({
-        "--rdcol" : "#faa",
-        "--rdcol2" : "#faaa"});  
-      }
-    }
-    else{
-      console.log("red");
-      $(":root").css({
-        "--rdcol" : "#afa",
-        "--rdcol2" : "#afaa"});
-    }
-  }//change bg green,red,blue
-  
-  setInterval(changeCol,1000);
-  newSong();
+$(function () {
+  var playerTrack = $("#player-track"),
+    bgArtwork = $("#bg-artwork"),
+    bgArtworkUrl,
+    albumName = $("#album-name"),
+    trackName = $("#track-name"),
+    albumArt = $("#album-art"),
+    sArea = $("#s-area"),
+    seekBar = $("#seek-bar"),
+    trackTime = $("#track-time"),
+    insTime = $("#ins-time"),
+    sHover = $("#s-hover"),
+    playPauseButton = $("#play-pause-button"),
+    i = playPauseButton.find("i"),
+    tProgress = $("#current-time"),
+    tTime = $("#track-length"),
+    seekT,
+    seekLoc,
+    seekBarPos,
+    cM,
+    ctMinutes,
+    ctSeconds,
+    curMinutes,
+    curSeconds,
+    durMinutes,
+    durSeconds,
+    playProgress,
+    bTime,
+    nTime = 0,
+    buffInterval = null,
+    tFlag = false,
+    albums = [
+      "RPW VA ONE"
+    ],
+    trackNames = [
+      "EDM Cavern",
+      "Alex Skrindo - Me & You",
+      "Kaaze - Electro Boy",
+      "Jordan Schor - Home",
+      "Martin Garrix - Proxy"
+    ],
+    albumArtworks = ["_1", "_2", "_3", "_4", "_5"],
+    trackUrl = [
+      "https://node-10.zeno.fm/mwhpvu78gg8uv?zs=0h1_VntdTy63Qsnw7lBZ8Q&rj-tok=AAABgNdRzzMA087vKFxK638GdQ&rj-ttl=5",
+      "https://raw.githubusercontent.com/himalayasingh/music-player-1/master/music/5.mp3"
+    ],
+    playPreviousTrackButton = $("#play-previous"),
+    playNextTrackButton = $("#play-next"),
+    currIndex = -1;
 
-  audioElement.addEventListener("canplay",function(){
-    $("#duration").text(convert(audioElement.duration));
-    $("#current").text(convert(audioElement.currentTime));
-  });
-  audioElement.addEventListener("timeupdate",function(){
-    $("#current").text(convert(audioElement.currentTime));
-    $("#seekBar").css("width",map(100,audioElement.duration,audioElement.currentTime) + "%");
-    if(!audioElement.paused)
-      $(".box_content").css("animation-duration", 60.0000 / obj[currentIndex].bpm + "s");
-    else
-      $(".box_content").css("animation-duration", "0s");
-  });  
-  audioElement.addEventListener("ended",function(){
-    nextSong();
-    newSong();
-    audioElement.play();
-  });
-  
-  $("#back").click(function(){
-    prevSong();
-    newSong();
-    if(playing){
-      audioElement.play();
+  function playPause() {
+    setTimeout(function () {
+      if (audio.paused) {
+        playerTrack.addClass("active");
+        albumArt.addClass("active");
+        checkBuffering();
+        i.attr("class", "fas fa-pause");
+        audio.play();
+      } else {
+        playerTrack.removeClass("active");
+        albumArt.removeClass("active");
+        clearInterval(buffInterval);
+        albumArt.removeClass("buffering");
+        i.attr("class", "fas fa-play");
+        audio.pause();
+      }
+    }, 300);
+  }
+
+  function showHover(event) {
+    seekBarPos = sArea.offset();
+    seekT = event.clientX - seekBarPos.left;
+    seekLoc = audio.duration * (seekT / sArea.outerWidth());
+
+    sHover.width(seekT);
+
+    cM = seekLoc / 60;
+
+    ctMinutes = Math.floor(cM);
+    ctSeconds = Math.floor(seekLoc - ctMinutes * 60);
+
+    if (ctMinutes < 0 || ctSeconds < 0) return;
+
+    if (ctMinutes < 0 || ctSeconds < 0) return;
+
+    if (ctMinutes < 10) ctMinutes = "0" + ctMinutes;
+    if (ctSeconds < 10) ctSeconds = "0" + ctSeconds;
+
+    if (isNaN(ctMinutes) || isNaN(ctSeconds)) insTime.text("--:--");
+    else insTime.text(ctMinutes + ":" + ctSeconds);
+
+    insTime.css({ left: seekT, "margin-left": "-21px" }).fadeIn(0);
+  }
+
+  function hideHover() {
+    sHover.width(0);
+    insTime.text("00:00").css({ left: "0px", "margin-left": "0px" }).fadeOut(0);
+  }
+
+  function playFromClickedPos() {
+    audio.currentTime = seekLoc;
+    seekBar.width(seekT);
+    hideHover();
+  }
+
+  function updateCurrTime() {
+    nTime = new Date();
+    nTime = nTime.getTime();
+
+    if (!tFlag) {
+      tFlag = true;
+      trackTime.addClass("active");
     }
-  });
-  $("#toggle").click(function() {
-    if(playing){
-      audioElement.pause();
-      playing = false;
-      toggle();
+
+    curMinutes = Math.floor(audio.currentTime / 60);
+    curSeconds = Math.floor(audio.currentTime - curMinutes * 60);
+
+    durMinutes = Math.floor(audio.duration / 60);
+    durSeconds = Math.floor(audio.duration - durMinutes * 60);
+
+    playProgress = (audio.currentTime / audio.duration) * 100;
+
+    if (curMinutes < 10) curMinutes = "0" + curMinutes;
+    if (curSeconds < 10) curSeconds = "0" + curSeconds;
+
+    if (durMinutes < 10) durMinutes = "0" + durMinutes;
+    if (durSeconds < 10) durSeconds = "0" + durSeconds;
+
+    if (isNaN(curMinutes) || isNaN(curSeconds)) tProgress.text("00:00");
+    else tProgress.text(curMinutes + ":" + curSeconds);
+
+    if (isNaN(durMinutes) || isNaN(durSeconds)) tTime.text("00:00");
+    else tTime.text(durMinutes + ":" + durSeconds);
+
+    if (
+      isNaN(curMinutes) ||
+      isNaN(curSeconds) ||
+      isNaN(durMinutes) ||
+      isNaN(durSeconds)
+    )
+      trackTime.removeClass("active");
+    else trackTime.addClass("active");
+
+    seekBar.width(playProgress + "%");
+
+    if (playProgress == 100) {
+      i.attr("class", "fa fa-play");
+      seekBar.width(0);
+      tProgress.text("00:00");
+      albumArt.removeClass("buffering").removeClass("active");
+      clearInterval(buffInterval);
     }
-    else{
-      audioElement.play();
-      playing = true;
-      toggle();
+  }
+
+  function checkBuffering() {
+    clearInterval(buffInterval);
+    buffInterval = setInterval(function () {
+      if (nTime == 0 || bTime - nTime > 1000) albumArt.addClass("buffering");
+      else albumArt.removeClass("buffering");
+
+      bTime = new Date();
+      bTime = bTime.getTime();
+    }, 100);
+  }
+
+  function selectTrack(flag) {
+    if (flag == 0 || flag == 1) ++currIndex;
+    else --currIndex;
+
+    if (currIndex > -1 && currIndex < albumArtworks.length) {
+      if (flag == 0) i.attr("class", "fa fa-play");
+      else {
+        albumArt.removeClass("buffering");
+        i.attr("class", "fa fa-pause");
+      }
+
+      seekBar.width(0);
+      trackTime.removeClass("active");
+      tProgress.text("00:00");
+      tTime.text("00:00");
+
+      currAlbum = albums[currIndex];
+      currTrackName = trackNames[currIndex];
+      currArtwork = albumArtworks[currIndex];
+
+      audio.src = trackUrl[currIndex];
+
+      nTime = 0;
+      bTime = new Date();
+      bTime = bTime.getTime();
+
+      if (flag != 0) {
+        audio.play();
+        playerTrack.addClass("active");
+        albumArt.addClass("active");
+
+        clearInterval(buffInterval);
+        checkBuffering();
+      }
+
+      albumName.text(currAlbum);
+      trackName.text(currTrackName);
+      albumArt.find("img.active").removeClass("active");
+      $("#" + currArtwork).addClass("active");
+
+      bgArtworkUrl = $("#" + currArtwork).attr("src");
+
+      bgArtwork.css({ "background-image": "url(" + bgArtworkUrl + ")" });
+    } else {
+      if (flag == 0 || flag == 1) --currIndex;
+      else ++currIndex;
     }
-  });
-  $("#next").click(function(){
-    nextSong();//currentIndex++
-    newSong();//carica canzone
-    if(playing)
-      audioElement.play();
-  });
-  
-  $(".progressBar").mouseup(function(e){
-    var leftOffset = e.pageX - $(this).offset().left;
-    audioElement.currentTime = map(audioElement.duration,$("#track").width(),leftOffset);
-  });
+  }
+
+  function initPlayer() {
+    audio = new Audio();
+
+    selectTrack(0);
+
+    audio.loop = false;
+
+    playPauseButton.on("click", playPause);
+
+    sArea.mousemove(function (event) {
+      showHover(event);
+    });
+
+    sArea.mouseout(hideHover);
+
+    sArea.on("click", playFromClickedPos);
+
+    $(audio).on("timeupdate", updateCurrTime);
+
+    playPreviousTrackButton.on("click", function () {
+      selectTrack(-1);
+    });
+    playNextTrackButton.on("click", function () {
+      selectTrack(1);
+    });
+  }
+
+  initPlayer();
 });
