@@ -1,243 +1,165 @@
-$(function () {
-  var playerTrack = $("#player-track"),
-    bgArtwork = $("#bg-artwork"),
-    bgArtworkUrl,
-    albumName = $("#album-name"),
-    trackName = $("#track-name"),
-    albumArt = $("#album-art"),
-    sArea = $("#s-area"),
-    seekBar = $("#seek-bar"),
-    trackTime = $("#track-time"),
-    insTime = $("#ins-time"),
-    sHover = $("#s-hover"),
-    playPauseButton = $("#play-pause-button"),
-    i = playPauseButton.find("i"),
-    tProgress = $("#current-time"),
-    tTime = $("#track-length"),
-    seekT,
-    seekLoc,
-    seekBarPos,
-    cM,
-    ctMinutes,
-    ctSeconds,
-    curMinutes,
-    curSeconds,
-    durMinutes,
-    durSeconds,
-    playProgress,
-    bTime,
-    nTime = 0,
-    buffInterval = null,
-    tFlag = false,
-    albums = [
-      "RPW VA ONE"
-    ],
-    trackNames = [
-      "EDM Cavern",
-      "Alex Skrindo - Me & You",
-      "Kaaze - Electro Boy",
-      "Jordan Schor - Home",
-      "Martin Garrix - Proxy"
-    ],
-    albumArtworks = ["_1", "_2", "_3", "_4", "_5"],
-    trackUrl = [
-      "https://node-10.zeno.fm/mwhpvu78gg8uv?zs=0h1_VntdTy63Qsnw7lBZ8Q&rj-tok=AAABgNdRzzMA087vKFxK638GdQ&rj-ttl=5",
-      "https://raw.githubusercontent.com/himalayasingh/music-player-1/master/music/5.mp3"
-    ],
-    playPreviousTrackButton = $("#play-previous"),
-    playNextTrackButton = $("#play-next"),
-    currIndex = -1;
+const AudioPlayer = {
+  template: `
+		<div class="player">
+			<div class="player-controls">
+				<div id="stop">
+					<a v-on:click.prevent="stop" title="Stop" href="#">
+						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+	 						<path fill="currentColor" d="M16,4.995v9.808C16,15.464,15.464,16,14.804,16H4.997C4.446,16,4,15.554,4,15.003V5.196C4,4.536,4.536,4,5.196,4h9.808C15.554,4,16,4.446,16,4.995z"/>
+						</svg>
+					</a>
+				</div>
+				<div id="play">
+					<a v-on:click.prevent="playing = !playing" :title="(playing) ? 'Pause' : 'Play'" href="#">
+						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+							<path v-if="!playing" fill="currentColor" d="M15,10.001c0,0.299-0.305,0.514-0.305,0.514l-8.561,5.303C5.51,16.227,5,15.924,5,15.149V4.852c0-0.777,0.51-1.078,1.135-0.67l8.561,5.305C14.695,9.487,15,9.702,15,10.001z"/>
+							<path v-else fill="currentColor" d="M15,3h-2c-0.553,0-1,0.048-1,0.6v12.8c0,0.552,0.447,0.6,1,0.6h2c0.553,0,1-0.048,1-0.6V3.6C16,3.048,15.553,3,15,3z M7,3H5C4.447,3,4,3.048,4,3.6v12.8C4,16.952,4.447,17,5,17h2c0.553,0,1-0.048,1-0.6V3.6C8,3.048,7.553,3,7,3z"/>
+						</svg>
+					</a>
+				</div>
+				<div id="seek">
+					<div class="player-timeline">
+						<div :style="progressStyle" class="player-progress"></div>
+						<div v-on:click="seek" class="player-seeker" title="Seek"></div>
+					</div>
+					<div class="player-time">
+						<div class="player-time-current">{{ this.currentSeconds | convertTimeHHMMSS }}</div>
+						<div class="player-time-total">{{ this.durationSeconds | convertTimeHHMMSS }}</div>
+					</div>
+				</div>
+				<div id="download" v-show="!showVolume">
+					<a v-on:click.prevent="download" href="#" title="Download">
+						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+							<path fill="currentColor" d="M15,7h-3V1H8v6H5l5,5L15,7z M19.338,13.532c-0.21-0.224-1.611-1.723-2.011-2.114C17.062,11.159,16.683,11,16.285,11h-1.757l3.064,2.994h-3.544c-0.102,0-0.194,0.052-0.24,0.133L12.992,16H7.008l-0.816-1.873c-0.046-0.081-0.139-0.133-0.24-0.133H2.408L5.471,11H3.715c-0.397,0-0.776,0.159-1.042,0.418c-0.4,0.392-1.801,1.891-2.011,2.114c-0.489,0.521-0.758,0.936-0.63,1.449l0.561,3.074c0.128,0.514,0.691,0.936,1.252,0.936h16.312c0.561,0,1.124-0.422,1.252-0.936l0.561-3.074C20.096,14.468,19.828,14.053,19.338,13.532z"/>
+						</svg>
+					</a>
+				</div>
+				<div id="loop" v-show="!showVolume">
+					<a v-on:click.prevent="looping = !looping" href="#" title="Loop">
+						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+							<path v-if="!looping" fill="currentColor" d="M1,12V5h3v6h10V8l5,4.5L14,17v-3H3C1.895,14,1,13.104,1,12z"/>
+							<path v-else fill="currentColor" d="M20,7v7c0,1.103-0.896,2-2,2H2c-1.104,0-2-0.897-2-2V7c0-1.104,0.896-2,2-2h7V3l4,3.5L9,10V8H3v5h14V8h-3V5h4C19.104,5,20,5.896,20,7z"/>
+						</svg>
+					</a>
+				</div>
+				<div id="mute">
+					<a v-on:click.prevent="mute" href="#" title="Mute">
+						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+							<path v-if="!muted" fill="currentColor" d="M5.312,4.566C4.19,5.685-0.715,12.681,3.523,16.918c4.236,4.238,11.23-0.668,12.354-1.789c1.121-1.119-0.335-4.395-3.252-7.312C9.706,4.898,6.434,3.441,5.312,4.566z M14.576,14.156c-0.332,0.328-2.895-0.457-5.364-2.928C6.745,8.759,5.956,6.195,6.288,5.865c0.328-0.332,2.894,0.457,5.36,2.926C14.119,11.258,14.906,13.824,14.576,14.156zM15.434,5.982l1.904-1.906c0.391-0.391,0.391-1.023,0-1.414c-0.39-0.391-1.023-0.391-1.414,0L14.02,4.568c-0.391,0.391-0.391,1.024,0,1.414C14.41,6.372,15.043,6.372,15.434,5.982z M11.124,3.8c0.483,0.268,1.091,0.095,1.36-0.388l1.087-1.926c0.268-0.483,0.095-1.091-0.388-1.36c-0.482-0.269-1.091-0.095-1.36,0.388L10.736,2.44C10.468,2.924,10.642,3.533,11.124,3.8z M19.872,6.816c-0.267-0.483-0.877-0.657-1.36-0.388l-1.94,1.061c-0.483,0.268-0.657,0.878-0.388,1.36c0.268,0.483,0.877,0.657,1.36,0.388l1.94-1.061C19.967,7.907,20.141,7.299,19.872,6.816z"/>
+							<path v-else fill="currentColor" d="M14.201,9.194c1.389,1.883,1.818,3.517,1.559,3.777c-0.26,0.258-1.893-0.17-3.778-1.559l-5.526,5.527c4.186,1.838,9.627-2.018,10.605-2.996c0.925-0.922,0.097-3.309-1.856-5.754L14.201,9.194z M8.667,7.941c-1.099-1.658-1.431-3.023-1.194-3.26c0.233-0.234,1.6,0.096,3.257,1.197l1.023-1.025C9.489,3.179,7.358,2.519,6.496,3.384C5.568,4.31,2.048,9.261,3.265,13.341L8.667,7.941z M18.521,1.478c-0.39-0.391-1.023-0.391-1.414,0L1.478,17.108c-0.391,0.391-0.391,1.024,0,1.414c0.391,0.391,1.023,0.391,1.414,0l15.629-15.63C18.912,2.501,18.912,1.868,18.521,1.478z"/>
+						</svg>
+					</a>
+				</div>
+				<div id="volume">
+					<a v-on:click.prevent="" v-on:mouseenter="showVolume = true" v-on:mouseleave="showVolume = false" :title="volumeTitle" href="#">
+						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+							<path fill="currentColor" d="M19,13.805C19,14.462,18.462,15,17.805,15H1.533c-0.88,0-0.982-0.371-0.229-0.822l16.323-9.055C18.382,4.67,19,5.019,19,5.9V13.805z"/>
+						</svg>
+						<input v-model.lazy.number="volume" v-show="showVolume" class="player-volume" type="range" min="0" max="100"/>
+					</a>
+				</div>
+			</div>
+			<audio :loop="looping" ref="audio" :src="file" v-on:timeupdate="update" v-on:loadeddata="load" v-on:pause="playing = false" v-on:play="playing = true" preload="auto" style="display: none;"></audio>
+		</div>
+  `,
+  props: {
+    autoPlay: {
+      type: Boolean,
+      default: false },
 
-  function playPause() {
-    setTimeout(function () {
-      if (audio.paused) {
-        playerTrack.addClass("active");
-        albumArt.addClass("active");
-        checkBuffering();
-        i.attr("class", "fas fa-pause");
-        audio.play();
-      } else {
-        playerTrack.removeClass("active");
-        albumArt.removeClass("active");
-        clearInterval(buffInterval);
-        albumArt.removeClass("buffering");
-        i.attr("class", "fas fa-play");
-        audio.pause();
-      }
-    }, 300);
-  }
+    file: {
+      type: String,
+      default: null },
 
-  function showHover(event) {
-    seekBarPos = sArea.offset();
-    seekT = event.clientX - seekBarPos.left;
-    seekLoc = audio.duration * (seekT / sArea.outerWidth());
+    loop: {
+      type: Boolean,
+      default: false } },
 
-    sHover.width(seekT);
 
-    cM = seekLoc / 60;
+  data: () => ({
+    currentSeconds: 0,
+    durationSeconds: 0,
+    loaded: false,
+    looping: false,
+    playing: false,
+    previousVolume: 35,
+    showVolume: false,
+    volume: 100 }),
 
-    ctMinutes = Math.floor(cM);
-    ctSeconds = Math.floor(seekLoc - ctMinutes * 60);
+  computed: {
+    muted() {
+      return this.volume / 100 === 0;
+    },
+    percentComplete() {
+      return parseInt(this.currentSeconds / this.durationSeconds * 100);
+    },
+    progressStyle() {
+      return { width: `${this.percentComplete}%` };
+    },
+    volumeTitle() {
+      return `Volume (${this.volume}%)`;
+    } },
 
-    if (ctMinutes < 0 || ctSeconds < 0) return;
+  filters: {
+    convertTimeHHMMSS(val) {
+      let hhmmss = new Date(val * 1000).toISOString().substr(11, 8);
 
-    if (ctMinutes < 0 || ctSeconds < 0) return;
+      return hhmmss.indexOf("00:") === 0 ? hhmmss.substr(3) : hhmmss;
+    } },
 
-    if (ctMinutes < 10) ctMinutes = "0" + ctMinutes;
-    if (ctSeconds < 10) ctSeconds = "0" + ctSeconds;
+  watch: {
+    playing(value) {
+      if (value) {return this.$refs.audio.play();}
+      this.$refs.audio.pause();
+    },
+    volume(value) {
+      this.$refs.audio.volume = this.volume / 100;
+    } },
 
-    if (isNaN(ctMinutes) || isNaN(ctSeconds)) insTime.text("--:--");
-    else insTime.text(ctMinutes + ":" + ctSeconds);
+  methods: {
+    download() {
+      this.stop();
+      window.open(this.file, 'download');
+    },
+    load() {
+      if (this.$refs.audio.readyState >= 2) {
+        this.loaded = true;
+        this.durationSeconds = parseInt(this.$refs.audio.duration);
 
-    insTime.css({ left: seekT, "margin-left": "-21px" }).fadeIn(0);
-  }
-
-  function hideHover() {
-    sHover.width(0);
-    insTime.text("00:00").css({ left: "0px", "margin-left": "0px" }).fadeOut(0);
-  }
-
-  function playFromClickedPos() {
-    audio.currentTime = seekLoc;
-    seekBar.width(seekT);
-    hideHover();
-  }
-
-  function updateCurrTime() {
-    nTime = new Date();
-    nTime = nTime.getTime();
-
-    if (!tFlag) {
-      tFlag = true;
-      trackTime.addClass("active");
-    }
-
-    curMinutes = Math.floor(audio.currentTime / 60);
-    curSeconds = Math.floor(audio.currentTime - curMinutes * 60);
-
-    durMinutes = Math.floor(audio.duration / 60);
-    durSeconds = Math.floor(audio.duration - durMinutes * 60);
-
-    playProgress = (audio.currentTime / audio.duration) * 100;
-
-    if (curMinutes < 10) curMinutes = "0" + curMinutes;
-    if (curSeconds < 10) curSeconds = "0" + curSeconds;
-
-    if (durMinutes < 10) durMinutes = "0" + durMinutes;
-    if (durSeconds < 10) durSeconds = "0" + durSeconds;
-
-    if (isNaN(curMinutes) || isNaN(curSeconds)) tProgress.text("00:00");
-    else tProgress.text(curMinutes + ":" + curSeconds);
-
-    if (isNaN(durMinutes) || isNaN(durSeconds)) tTime.text("00:00");
-    else tTime.text(durMinutes + ":" + durSeconds);
-
-    if (
-      isNaN(curMinutes) ||
-      isNaN(curSeconds) ||
-      isNaN(durMinutes) ||
-      isNaN(durSeconds)
-    )
-      trackTime.removeClass("active");
-    else trackTime.addClass("active");
-
-    seekBar.width(playProgress + "%");
-
-    if (playProgress == 100) {
-      i.attr("class", "fa fa-play");
-      seekBar.width(0);
-      tProgress.text("00:00");
-      albumArt.removeClass("buffering").removeClass("active");
-      clearInterval(buffInterval);
-    }
-  }
-
-  function checkBuffering() {
-    clearInterval(buffInterval);
-    buffInterval = setInterval(function () {
-      if (nTime == 0 || bTime - nTime > 1000) albumArt.addClass("buffering");
-      else albumArt.removeClass("buffering");
-
-      bTime = new Date();
-      bTime = bTime.getTime();
-    }, 100);
-  }
-
-  function selectTrack(flag) {
-    if (flag == 0 || flag == 1) ++currIndex;
-    else --currIndex;
-
-    if (currIndex > -1 && currIndex < albumArtworks.length) {
-      if (flag == 0) i.attr("class", "fa fa-play");
-      else {
-        albumArt.removeClass("buffering");
-        i.attr("class", "fa fa-pause");
+        return this.playing = this.autoPlay;
       }
 
-      seekBar.width(0);
-      trackTime.removeClass("active");
-      tProgress.text("00:00");
-      tTime.text("00:00");
-
-      currAlbum = albums[currIndex];
-      currTrackName = trackNames[currIndex];
-      currArtwork = albumArtworks[currIndex];
-
-      audio.src = trackUrl[currIndex];
-
-      nTime = 0;
-      bTime = new Date();
-      bTime = bTime.getTime();
-
-      if (flag != 0) {
-        audio.play();
-        playerTrack.addClass("active");
-        albumArt.addClass("active");
-
-        clearInterval(buffInterval);
-        checkBuffering();
+      throw new Error('Failed to load sound file.');
+    },
+    mute() {
+      if (this.muted) {
+        return this.volume = this.previousVolume;
       }
 
-      albumName.text(currAlbum);
-      trackName.text(currTrackName);
-      albumArt.find("img.active").removeClass("active");
-      $("#" + currArtwork).addClass("active");
+      this.previousVolume = this.volume;
+      this.volume = 0;
+    },
+    seek(e) {
+      if (!this.loaded) return;
 
-      bgArtworkUrl = $("#" + currArtwork).attr("src");
+      const bounds = e.target.getBoundingClientRect();
+      const seekPos = (e.clientX - bounds.left) / bounds.width;
 
-      bgArtwork.css({ "background-image": "url(" + bgArtworkUrl + ")" });
-    } else {
-      if (flag == 0 || flag == 1) --currIndex;
-      else ++currIndex;
-    }
-  }
+      this.$refs.audio.currentTime = parseInt(this.$refs.audio.duration * seekPos);
+    },
+    stop() {
+      this.playing = false;
+      this.$refs.audio.currentTime = 0;
+    },
+    update(e) {
+      this.currentSeconds = parseInt(this.$refs.audio.currentTime);
+    } },
 
-  function initPlayer() {
-    audio = new Audio();
+  created() {
+    this.looping = this.loop;
+  } };
 
-    selectTrack(0);
 
-    audio.loop = false;
-
-    playPauseButton.on("click", playPause);
-
-    sArea.mousemove(function (event) {
-      showHover(event);
-    });
-
-    sArea.mouseout(hideHover);
-
-    sArea.on("click", playFromClickedPos);
-
-    $(audio).on("timeupdate", updateCurrTime);
-
-    playPreviousTrackButton.on("click", function () {
-      selectTrack(-1);
-    });
-    playNextTrackButton.on("click", function () {
-      selectTrack(1);
-    });
-  }
-
-  initPlayer();
-});
+new Vue({
+  el: "#audio",
+  components: { AudioPlayer } });
