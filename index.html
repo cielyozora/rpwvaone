@@ -2,39 +2,48 @@
 <html lang="en" >
 <head>
   <meta charset="UTF-8">
-  <title>VA ONE</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1"><link rel='stylesheet' href='//cdn.plyr.io/3.4.7/plyr.css'><link rel="stylesheet" href="./style.css">
+  <title>CodePen - Bouncing  Player Music </title>
+  <link rel="stylesheet" href="./style.css">
 
 </head>
 <body>
 <!-- partial:index.partial.html -->
-<div class="container">
-    <div class="column add-bottom">
-        <div id="mainwrap">
-            <div id="nowPlay">
-                <span id="npAction">Paused...</span><span id="npTitle"></span>
-            </div>
-            <div id="audiowrap">
-                <div id="audio0">
-                    <audio id="audio1" preload controls>Your browser does not support HTML5 Audio! 😢</audio>
-                </div>
-                <div id="tracks">
-                    <a id="btnPrev">&larr;</a><a id="btnNext">&rarr;</a>
-                </div>
-            </div>
-            <div id="plwrap">
-                <ul id="plList"></ul>
-            </div>
-        </div>
+<div class="box">
+  <div class="box_content">
+    <div class="container" id="header">
+      <div class="thumbnail"></div>
     </div>
-    <div class="column add-bottom center">
-        <p>POWERED BY <a href="http://www.musikmptiga.tk/" style="text-decoration:none;" target="_blank">RPW VA ONE</a></p>
+    <div class="container" id="title">
+      <div class ="title">
+        <div class="marquee title_container" id="name">Title sample</div>
+        <div class="marquee title_container" id="author">Artist Sample</div>
+      </div>
     </div>
+    <div class="container" id="timeline">
+      <div class="progressBar" id="track"></div>
+      <div class="progressBar" id="seekBar"></div>
+      <div class="timing" id="duration">00:00</div>
+      <div class="timing" id="current">00:00</div>
+    </div>
+    <div class="container" id="player">
+      <div class="btn" id="back">
+        <div class="shape"></div>
+        <div class="shape nd"></div>  
+      </div>
+      <div class="btn" id="toggle">
+        <div class="shape"></div>
+        <div class="shape nd"></div>  
+      </div>
+      <div class="btn" id="next">
+        <div class="shape"></div>
+        <div class="shape nd"></div>
+      </div>
+    </div>
+  </div>
 </div>
 <!-- partial -->
-  <script src='//cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js'></script>
-<script src='//cdnjs.cloudflare.com/ajax/libs/html5media/1.1.8/html5media.min.js'></script>
-<script src='https://cdnjs.cloudflare.com/ajax/libs/plyr/3.4.7/plyr.min.js'></script><script  src="./script.js"></script>
+  <script src='https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js'></script>
+<script src='https://cdnjs.cloudflare.com/ajax/libs/jQuery.Marquee/1.5.0/jquery.marquee.min.js'></script><script  src="./script.js"></script>
 
 </body>
 </html>
