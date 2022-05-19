@@ -2,18 +2,54 @@
 <html lang="en" >
 <head>
   <meta charset="UTF-8">
-  <title>CodePen - VueJS + HTML5 Audio Player</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/meyer-reset/2.0/reset.min.css">
-<link rel='stylesheet' href='https://fonts.googleapis.com/css2?family=Nunito:wght@400;700&amp;display=swap'><link rel="stylesheet" href="./style.css">
+  <title>CodePen - Vintage Music Player</title>
+  <link rel="stylesheet" href="./style.css">
 
 </head>
 <body>
 <!-- partial:index.partial.html -->
-<div id="audio" class="player-wrapper">
-	<audio-player file="https://upload.wikimedia.org/wikipedia/commons/d/d6/Louis-Emmanuel_Jadin_-_Nocturne_No._3_in_G_minor_-_2._Allegro_molto.ogg"></audio-player>
+<div class="wrapper">
+   <div class="box">
+     <audio src="https://raw.githubusercontent.com/Lucky-victory/zplayer/master/songs/angels-like-you.mp3" id="audioElem" hidden></audio>
+     <div class="box-top">
+       <div class="tuner">
+         <div class="tuner-inner"></div>
+         <div class="tuner-line"></div>
+       </div>
+     </div><!--   box-top -->
+     
+     <div class="tuner-roller"></div>
+     <div class="rect-boxes-container">
+       <span class="rect-box"></span>
+       <span class="rect-box"></span>
+       <span class="rect-box middle-rect-box"></span>
+       <span class="rect-box"></span>
+       <span class="rect-box"></span>
+     </div>
+   <div class="box-handle">
+   </div>
+   <div class="box-handle-pole left-pole"></div>
+     <div class="box-handle-pole right-pole"></div>
+     <div class="speaker left"></div>
+     <div class="cassette-box">
+       <div class="cassette-box-inner">
+       </div>
+     </div>
+<div class="box-middle">
+       <div class="btns-container">
+   <input type="checkbox"  class="btns" id="stopBtn"/>
+   <input type="checkbox"  class="btns" id="prevBtn"/>
+   <input type="checkbox"  class="btns" id="playPauseBtn" />
+   <input type="checkbox"  class="btns" id="nextBtn"/>
+<!--    <input type="checkbox"  class="btns" id="recBtn"/> -->
+      
+    </div>
 </div>
+     <div class="speaker right"></div>
+   </div>
+ </div>
 <!-- partial -->
-  <script src='https://cdnjs.cloudflare.com/ajax/libs/vue/2.6.14/vue.min.js'></script><script  src="./script.js"></script>
+  <script  src="./script.js"></script>
 
 </body>
 </html>
